@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	PlayerNotFound = StoreError("Player not found")
+	PlayerNotFoundError = StoreError("Player not found")
 )
 
 type StoreError string
@@ -76,11 +76,9 @@ func (svr *PlayerServer) processWin(w http.ResponseWriter, player string) {
 func (svr *PlayerServer) showScore(w http.ResponseWriter, player string) {
 	score, err := svr.Store.GetPlayerScore(player)
 
-	if err == PlayerNotFound {
+	if err == PlayerNotFoundError {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-
 	fmt.Fprint(w, score)
-
 }

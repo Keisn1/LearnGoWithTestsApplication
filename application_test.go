@@ -30,7 +30,7 @@ func (s *StubPlayerStore) RecordWin(name string) {
 func (s *StubPlayerStore) GetPlayerScore(name string) (int, StoreError) {
 	score, exists := s.scores[name]
 	if !exists {
-		return -1, PlayerNotFound
+		return -1, PlayerNotFoundError
 	}
 	return score, ""
 }
@@ -46,13 +46,13 @@ func TestLeagueTable(t *testing.T) {
 		server.ServeHTTP(response, request)
 		assertStatusCode(t, response.Code, http.StatusOK)
 
-		got := response.Header()["content-type"]
+		got := response.Header()["Content-Type"]
 		if len(got) != 1 {
-			t.Errorf("Got %d entries in response.Header()['Content-Type']); want %d", len(got), 1)
+			t.Errorf("Got %d entries in response.Header()['content-type']); want %d", len(got), 1)
 		}
 		want := "application/json"
 		if got[0] != want {
-			t.Errorf(`response.Header()["Content-Type"] = "%v"; want "%v"`, got[0], want)
+			t.Errorf(`response.Header()["content-type"] = "%v"; want "%v"`, got[0], want)
 		}
 	})
 	t.Run("Returns empty list of players", func(t *testing.T) {
@@ -65,7 +65,7 @@ func TestLeagueTable(t *testing.T) {
 		got := getLeagueFromResponse(t, response.Body)
 		want := []Player{}
 		assertStatusCode(t, response.Code, http.StatusOK)
-		assertEqualListPlayers(t, got, want)
+		assertLeague(t, got, want)
 	})
 
 	t.Run("Returns json with list of players", func(t *testing.T) {
@@ -89,7 +89,7 @@ func TestLeagueTable(t *testing.T) {
 
 		got := getLeagueFromResponse(t, response.Body)
 		assertStatusCode(t, response.Code, http.StatusOK)
-		assertEqualListPlayers(t, got, want)
+		assertLeague(t, got, want)
 	})
 }
 
@@ -183,16 +183,17 @@ func newPostWinRequest(player string) *http.Request {
 	return request
 }
 
-func assertEqualListPlayers(t *testing.T, got, want []Player) {
-	for _, p1 := range got {
+func assertLeague(t *testing.T, got, want []Player) {
+	t.Helper()
+	for _, p1 := range want {
 		present := false
-		for _, p2 := range want {
+		for _, p2 := range got {
 			if p1.Name == p2.Name && p1.Wins == p2.Wins {
 				present = true
 			}
 		}
 		if !present {
-			t.Errorf("%v of got not in want = %v", p1, want)
+			t.Errorf("%v of want not in got = %v", p1, got)
 		}
 	}
 }
