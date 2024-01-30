@@ -22,7 +22,7 @@ type Player struct {
 type PlayerStore interface {
 	// Return PlayerNotFound error in case that player wasn't found
 	GetPlayerScore(name string) (int, StoreError)
-	GetPlayers() []Player
+	GetLeagueTable() []Player
 	RecordWin(name string)
 }
 
@@ -47,8 +47,8 @@ func (svr *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *PlayerServer) getLeague(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(s.Store.GetPlayers())
+	w.Header().Set("content-type", "application/json")
+	err := json.NewEncoder(w).Encode(s.Store.GetLeagueTable())
 	w.WriteHeader(http.StatusOK)
 	if err != nil {
 		slog.Error("Wasn't able to Marshal players into json")

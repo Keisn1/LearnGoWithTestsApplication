@@ -27,10 +27,10 @@ func (s *InMemoryPlayerStore) RecordWin(name string) {
 	return
 }
 
-func (s *InMemoryPlayerStore) GetPlayers() []string {
-	var players []string
-	for p := range s.scores {
-		players = append(players, p)
+func (s *InMemoryPlayerStore) GetLeagueTable() []app.Player {
+	var players []app.Player
+	for p, w := range s.scores {
+		players = append(players, app.Player{Name: p, Wins: w})
 	}
 	return players
 }

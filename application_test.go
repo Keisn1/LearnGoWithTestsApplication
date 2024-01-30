@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -14,7 +15,7 @@ type StubPlayerStore struct {
 	winCalls []string
 }
 
-func (s *StubPlayerStore) GetPlayers() []Player {
+func (s *StubPlayerStore) GetLeagueTable() []Player {
 	var players []Player
 	for p, w := range s.scores {
 		players = append(players, Player{p, w})
@@ -45,7 +46,7 @@ func TestLeagueTable(t *testing.T) {
 		server.ServeHTTP(response, request)
 		assertStatusCode(t, response.Code, http.StatusOK)
 
-		got := response.Header()["Content-Type"]
+		got := response.Header()["content-type"]
 		if len(got) != 1 {
 			t.Errorf("Got %d entries in response.Header()['Content-Type']); want %d", len(got), 1)
 		}
@@ -61,14 +62,10 @@ func TestLeagueTable(t *testing.T) {
 		server.ServeHTTP(response, request)
 		assertStatusCode(t, response.Code, http.StatusOK)
 
-		var got []Player
-		err := json.NewDecoder(response.Body).Decode(&got)
-		if err != nil {
-			t.Fatalf("Unable to Unmarshal response body into []string")
-		}
+		got := getLeagueFromResponse(t, response.Body)
 		want := []Player{}
+		assertStatusCode(t, response.Code, http.StatusOK)
 		assertEqualListPlayers(t, got, want)
-
 	})
 
 	t.Run("Returns json with list of players", func(t *testing.T) {
@@ -90,16 +87,8 @@ func TestLeagueTable(t *testing.T) {
 			{"Pepper", 20}, {"Billy", 10},
 		}
 
-		var got []Player
-		err := json.Unmarshal(response.Body.Bytes(), &got)
-		if err != nil {
-			t.Fatalf("Unable to Unmarshal response body into []string")
-		}
-
-		if len(got) != len(want) {
-			t.Errorf(`len(got) = %v; len(want) %v`, len(got), len(want))
-		}
-
+		got := getLeagueFromResponse(t, response.Body)
+		assertStatusCode(t, response.Code, http.StatusOK)
 		assertEqualListPlayers(t, got, want)
 	})
 }
@@ -206,4 +195,14 @@ func assertEqualListPlayers(t *testing.T, got, want []Player) {
 			t.Errorf("%v of got not in want = %v", p1, want)
 		}
 	}
+}
+
+func getLeagueFromResponse(t *testing.T, body io.Reader) []Player {
+	t.Helper()
+	var league []Player
+	err := json.NewDecoder(body).Decode(&league)
+	if err != nil {
+		t.Fatalf("Unable to Unmarshal response body into []string")
+	}
+	return league
 }
