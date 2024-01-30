@@ -14,22 +14,48 @@ const (
 
 type StoreError string
 
+type Player struct {
+	Name string
+	Wins int
+}
+
 type PlayerStore interface {
 	// Return PlayerNotFound error in case that player wasn't found
 	GetPlayerScore(name string) (int, StoreError)
-	GetPlayers() []string
+	GetPlayers() []Player
 	RecordWin(name string)
 }
 
 type PlayerServer struct {
 	Store PlayerStore
+	http.Handler
 }
 
-func (svr *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func NewPlayerServer(store PlayerStore) *PlayerServer {
+	svr := &PlayerServer{
+		Store: store,
+	}
 	router := http.NewServeMux()
 	router.Handle("/league", http.HandlerFunc(svr.getLeague))
 	router.Handle("/players/", http.HandlerFunc(svr.playersHandler))
-	router.ServeHTTP(w, r)
+	svr.Handler = router
+	return svr
+}
+
+func (svr *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
+	svr.getLeague(w, r)
+}
+
+func (s *PlayerServer) getLeague(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(s.Store.GetPlayers())
+	w.WriteHeader(http.StatusOK)
+	if err != nil {
+		slog.Error("Wasn't able to Marshal players into json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Error occurred while encoding JSON"))
+		return
+	}
 }
 
 func (svr *PlayerServer) playersHandler(w http.ResponseWriter, r *http.Request) {
@@ -40,25 +66,6 @@ func (svr *PlayerServer) playersHandler(w http.ResponseWriter, r *http.Request) 
 	case http.MethodPost:
 		svr.processWin(w, player)
 	}
-
-}
-
-func (svr *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
-	svr.getLeague(w, r)
-}
-
-func (s *PlayerServer) getLeague(w http.ResponseWriter, r *http.Request) {
-	players := s.Store.GetPlayers()
-	b, err := json.Marshal(players)
-	if err != nil {
-		slog.Error("Wasn't able to Marshal players into json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error occurred while encoding JSON"))
-		return
-	}
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(200)
-	w.Write(b)
 }
 
 func (svr *PlayerServer) processWin(w http.ResponseWriter, player string) {

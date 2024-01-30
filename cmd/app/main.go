@@ -2,10 +2,8 @@ package main
 
 import (
 	"app"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"sync"
 )
 
@@ -29,12 +27,19 @@ func (s *InMemoryPlayerStore) RecordWin(name string) {
 	return
 }
 
+func (s *InMemoryPlayerStore) GetPlayers() []string {
+	var players []string
+	for p := range s.scores {
+		players = append(players, p)
+	}
+	return players
+}
+
 func NewInMemoryPlayerStore() *InMemoryPlayerStore {
 	return &InMemoryPlayerStore{lock: sync.Mutex{}, scores: map[string]int{}}
 }
 
 func main() {
-	store := NewInMemoryPlayerStore()
-	svr := &app.PlayerServer{Store: store}
+	svr := app.NewPlayerServer(NewInMemoryPlayerStore())
 	log.Fatal(http.ListenAndServe(":5000", svr))
 }

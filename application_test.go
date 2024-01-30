@@ -14,10 +14,10 @@ type StubPlayerStore struct {
 	winCalls []string
 }
 
-func (s *StubPlayerStore) GetPlayers() []string {
-	var players []string
-	for p := range s.scores {
-		players = append(players, p)
+func (s *StubPlayerStore) GetPlayers() []Player {
+	var players []Player
+	for p, w := range s.scores {
+		players = append(players, Player{p, w})
 	}
 	return players
 }
@@ -36,9 +36,9 @@ func (s *StubPlayerStore) GetPlayerScore(name string) (int, StoreError) {
 
 func TestLeagueTable(t *testing.T) {
 	store := StubPlayerStore{}
-	server := &PlayerServer{&store}
+	server := NewPlayerServer(&store)
 
-	t.Run("Returns empty json", func(t *testing.T) {
+	t.Run("Returns correct status codes", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/league", nil)
 		response := httptest.NewRecorder()
 
@@ -53,17 +53,22 @@ func TestLeagueTable(t *testing.T) {
 		if got[0] != want {
 			t.Errorf(`response.Header()["Content-Type"] = "%v"; want "%v"`, got[0], want)
 		}
+	})
+	t.Run("Returns empty list of players", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/league", nil)
+		response := httptest.NewRecorder()
 
-		var players []string
-		wantJson, err := json.Marshal(players)
+		server.ServeHTTP(response, request)
+		assertStatusCode(t, response.Code, http.StatusOK)
+
+		var got []Player
+		err := json.NewDecoder(response.Body).Decode(&got)
 		if err != nil {
-			t.Fatalf("Could not marshal into json")
+			t.Fatalf("Unable to Unmarshal response body into []string")
 		}
+		want := []Player{}
+		assertEqualListPlayers(t, got, want)
 
-		gotJson := response.Body.Bytes()
-		if !reflect.DeepEqual(gotJson, wantJson) {
-			t.Errorf("Got = %v; want %v", string(gotJson), string(wantJson))
-		}
 	})
 
 	t.Run("Returns json with list of players", func(t *testing.T) {
@@ -74,23 +79,28 @@ func TestLeagueTable(t *testing.T) {
 			},
 		}
 
-		server := &PlayerServer{&store}
+		server := NewPlayerServer(&store)
 
 		request, _ := http.NewRequest(http.MethodGet, "/league", nil)
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
 
-		players := []string{"Pepper", "Billy"}
-		want, err := json.Marshal(players)
-		if err != nil {
-			t.Fatalf("Could not marshal into json")
+		want := []Player{
+			{"Pepper", 20}, {"Billy", 10},
 		}
 
-		got := response.Body.Bytes()
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("Got = %v; want %v", string(got), string(want))
+		var got []Player
+		err := json.Unmarshal(response.Body.Bytes(), &got)
+		if err != nil {
+			t.Fatalf("Unable to Unmarshal response body into []string")
 		}
+
+		if len(got) != len(want) {
+			t.Errorf(`len(got) = %v; len(want) %v`, len(got), len(want))
+		}
+
+		assertEqualListPlayers(t, got, want)
 	})
 }
 
@@ -109,7 +119,7 @@ func TestGetPlayers(t *testing.T) {
 			"Billy":  10,
 		},
 	}
-	server := &PlayerServer{&store}
+	server := NewPlayerServer(&store)
 
 	for _, tc := range testCases {
 		testName := fmt.Sprintf("Get %s score", tc.player)
@@ -136,7 +146,7 @@ func TestGetPlayers(t *testing.T) {
 
 func TestStoreWins(t *testing.T) {
 	store := StubPlayerStore{scores: map[string]int{}}
-	server := &PlayerServer{&store}
+	server := NewPlayerServer(&store)
 
 	t.Run("It returns accepted on Post", func(t *testing.T) {
 		request := newPostWinRequest("Pepper")
@@ -182,4 +192,18 @@ func newGetScoreRequest(player string) *http.Request {
 func newPostWinRequest(player string) *http.Request {
 	request, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("/players/%s", player), nil)
 	return request
+}
+
+func assertEqualListPlayers(t *testing.T, got, want []Player) {
+	for _, p1 := range got {
+		present := false
+		for _, p2 := range want {
+			if p1.Name == p2.Name && p1.Wins == p2.Wins {
+				present = true
+			}
+		}
+		if !present {
+			t.Errorf("%v of got not in want = %v", p1, want)
+		}
+	}
 }
