@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func CreateTempFile(t testing.TB, initialData string) (io.ReadWriteSeeker, func()) {
+func createTempFile(t testing.TB, initialData string) (io.ReadWriteSeeker, func()) {
 	t.Helper()
 	tmpfile, err := os.CreateTemp("", "db")
 
@@ -26,7 +26,7 @@ func CreateTempFile(t testing.TB, initialData string) (io.ReadWriteSeeker, func(
 func TestFileSystemStore(t *testing.T) {
 	t.Run("League from a reader", func(t *testing.T) {
 
-		database, cleanDatabase := CreateTempFile(t, `[
+		database, cleanDatabase := createTempFile(t, `[
 {"Name": "Pepper", "Wins": 20},
 {"Name": "Gilly","Wins": 10}]`)
 
@@ -51,7 +51,7 @@ func TestFileSystemStore(t *testing.T) {
 
 func TestGetPlayerScore(t *testing.T) {
 	t.Run("League from a reader", func(t *testing.T) {
-		database, cleanDatabase := CreateTempFile(t, `[
+		database, cleanDatabase := createTempFile(t, `[
 {"Name": "Pepper", "Wins": 20},
 {"Name": "Gilly","Wins": 10}]`)
 
@@ -72,7 +72,7 @@ func TestGetPlayerScore(t *testing.T) {
 
 func TestRecordWin(t *testing.T) {
 	t.Run("store wins for player", func(t *testing.T) {
-		database, cleanDatabase := CreateTempFile(t, `[
+		database, cleanDatabase := createTempFile(t, `[
 {"Name": "Pepper", "Wins": 20},
 {"Name": "Gilly","Wins": 10}]`)
 
@@ -88,7 +88,7 @@ func TestRecordWin(t *testing.T) {
 		}
 	})
 	t.Run("store wins for player", func(t *testing.T) {
-		database, cleanDatabase := CreateTempFile(t, `[
+		database, cleanDatabase := createTempFile(t, `[
 {"Name": "Pepper", "Wins": 20},
 {"Name": "Gilly","Wins": 10}]`)
 

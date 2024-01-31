@@ -49,7 +49,6 @@ func (svr *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
 func (s *PlayerServer) getLeague(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 	err := json.NewEncoder(w).Encode(s.Store.GetLeagueTable())
-	w.WriteHeader(http.StatusOK)
 	if err != nil {
 		slog.Error("Wasn't able to Marshal players into json")
 		w.WriteHeader(http.StatusInternalServerError)
