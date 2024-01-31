@@ -1,7 +1,7 @@
 package main
 
 import (
-	"app"
+	"app/poker"
 	"log"
 	"net/http"
 	"os"
@@ -14,12 +14,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to open database file %v with err: %v", dbFileName, err)
 	}
-	store, err := app.NewFileSystemPlayerStore(db)
+	store, err := poker.NewFileSystemPlayerStore(db)
 	if err != nil {
 		log.Fatalf("problem creating file system player store, %v ", err)
 	}
 
-	svr := app.NewPlayerServer(store)
+	svr := poker.NewPlayerServer(store)
 
 	if err := http.ListenAndServe(":5000", svr); err != nil {
 		log.Fatalf("Could not listen on port 5000 with err: %v", err)
