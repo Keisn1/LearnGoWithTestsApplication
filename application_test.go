@@ -185,16 +185,8 @@ func newPostWinRequest(player string) *http.Request {
 
 func assertLeague(t *testing.T, got, want []Player) {
 	t.Helper()
-	for _, p1 := range want {
-		present := false
-		for _, p2 := range got {
-			if p1.Name == p2.Name && p1.Wins == p2.Wins {
-				present = true
-			}
-		}
-		if !present {
-			t.Errorf("%v of want not in got = %v", p1, got)
-		}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v want %v", got, want)
 	}
 }
 

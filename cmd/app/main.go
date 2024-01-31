@@ -15,7 +15,7 @@ type InMemoryPlayerStore struct {
 func (s *InMemoryPlayerStore) GetPlayerScore(name string) (int, app.StoreError) {
 	score, exists := s.scores[name]
 	if !exists {
-		return -1, app.PlayerNotFound
+		return -1, app.PlayerNotFoundError
 	}
 	return score, ""
 }

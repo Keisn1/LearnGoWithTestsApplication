@@ -22,7 +22,7 @@ type Player struct {
 type PlayerStore interface {
 	// Return PlayerNotFound error in case that player wasn't found
 	GetPlayerScore(name string) (int, StoreError)
-	GetLeagueTable() []Player
+	GetLeagueTable() League
 	RecordWin(name string)
 }
 

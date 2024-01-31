@@ -9,7 +9,11 @@ import (
 )
 
 func TestRecordingWinsAndRetrievingThem(t *testing.T) {
-	server := app.NewPlayerServer(NewInMemoryPlayerStore())
+	database, cleanDatabase := app.CreateTempFile(t, "")
+	defer cleanDatabase()
+	store := app.FileSystemPlayerStore{DB: database}
+
+	server := app.NewPlayerServer(&store)
 	player := "Pepper"
 
 	request, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("/players/%s", player), nil)
