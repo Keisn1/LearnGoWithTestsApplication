@@ -1,12 +1,12 @@
 package app
 
 import (
-	"io"
+	"fmt"
 	"os"
 	"testing"
 )
 
-func createTempFile(t testing.TB, initialData string) (io.ReadWriteSeeker, func()) {
+func createTempFile(t testing.TB, initialData string) (*os.File, func()) {
 	t.Helper()
 	tmpfile, err := os.CreateTemp("", "db")
 
@@ -24,16 +24,25 @@ func createTempFile(t testing.TB, initialData string) (io.ReadWriteSeeker, func(
 }
 
 func TestFileSystemStore(t *testing.T) {
+	t.Run("works with an empty file", func(t *testing.T) {
+		database, cleanDatabase := createTempFile(t, "")
+		defer cleanDatabase()
+		_, err := NewFileSystemPlayerStore(database)
+		assertNoError(t, err)
+	})
+
 	t.Run("League from a reader", func(t *testing.T) {
 
 		database, cleanDatabase := createTempFile(t, `[
-{"Name": "Pepper", "Wins": 20},
-{"Name": "Gilly","Wins": 10}]`)
+{"Name": "Gilly","Wins": 10},
+{"Name": "Pepper", "Wins": 20}]`)
 
 		defer cleanDatabase()
 
-		store := FileSystemPlayerStore{database}
+		store, err := NewFileSystemPlayerStore(database)
+		assertNoError(t, err)
 
+		fmt.Println(store.league)
 		got := store.GetLeagueTable()
 
 		want := []Player{
@@ -57,7 +66,8 @@ func TestGetPlayerScore(t *testing.T) {
 
 		defer cleanDatabase()
 
-		store := FileSystemPlayerStore{database}
+		store, err := NewFileSystemPlayerStore(database)
+		assertNoError(t, err)
 
 		want := 20
 
@@ -78,7 +88,8 @@ func TestRecordWin(t *testing.T) {
 
 		defer cleanDatabase()
 
-		store := FileSystemPlayerStore{database}
+		store, err := NewFileSystemPlayerStore(database)
+		assertNoError(t, err)
 
 		store.RecordWin("Pepper")
 		want := 21
@@ -94,7 +105,8 @@ func TestRecordWin(t *testing.T) {
 
 		defer cleanDatabase()
 
-		store := FileSystemPlayerStore{database}
+		store, err := NewFileSystemPlayerStore(database)
+		assertNoError(t, err)
 
 		store.RecordWin("Johnny")
 		want := 1
@@ -109,5 +121,12 @@ func assertEqualScores(t testing.TB, got, want int) {
 	t.Helper()
 	if got != want {
 		t.Errorf(`got = %v; want %v`, got, want)
+	}
+}
+
+func assertNoError(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("didn't expect an error but got one, %v", err)
 	}
 }

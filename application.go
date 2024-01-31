@@ -77,6 +77,7 @@ func (svr *PlayerServer) showScore(w http.ResponseWriter, player string) {
 
 	if err == PlayerNotFoundError {
 		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Player wasn't Found")
 		return
 	}
 	fmt.Fprint(w, score)

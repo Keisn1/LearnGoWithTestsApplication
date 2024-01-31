@@ -3,14 +3,13 @@ package main
 import (
 	"app"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 )
 
-func createTempFile(t testing.TB, initialData string) (io.ReadWriteSeeker, func()) {
+func createTempFile(t testing.TB, initialData string) (*os.File, func()) {
 	t.Helper()
 	tmpfile, err := os.CreateTemp("", "db")
 
@@ -28,11 +27,13 @@ func createTempFile(t testing.TB, initialData string) (io.ReadWriteSeeker, func(
 }
 
 func TestRecordingWinsAndRetrievingThem(t *testing.T) {
-	database, cleanDatabase := createTempFile(t, "")
+	database, cleanDatabase := createTempFile(t, `[]`)
 	defer cleanDatabase()
-	store := app.FileSystemPlayerStore{DB: database}
+	store, err := app.NewFileSystemPlayerStore(database)
+	assertNoError(t, err)
 
-	server := app.NewPlayerServer(&store)
+	server := app.NewPlayerServer(store)
+
 	player := "Pepper"
 
 	request, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("/players/%s", player), nil)
@@ -64,5 +65,12 @@ func assertStatusCode(t *testing.T, got, want int) {
 
 	if got != want {
 		t.Errorf("got = \"%v\"; want \"%v\"", got, want)
+	}
+}
+
+func assertNoError(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("didn't expect an error but got one, %v", err)
 	}
 }

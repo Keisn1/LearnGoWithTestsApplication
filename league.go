@@ -3,16 +3,16 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"io"
+	"os"
 )
 
 type League []Player
 
-func NewLeague(rdr io.Reader) (League, error) {
+func NewLeague(file *os.File) (League, error) {
 	var league League
-	err := json.NewDecoder(rdr).Decode(&league)
+	err := json.NewDecoder(file).Decode(&league)
 	if err != nil {
-		err = fmt.Errorf("problem parsing league: %v", err)
+		err = fmt.Errorf("problem parsing league, initialising with empty league: %v", err)
 	}
 	return league, err
 }
@@ -24,4 +24,16 @@ func (l League) Find(name string) *Player {
 		}
 	}
 	return nil
+}
+
+func (l League) Len() int {
+	return len(l)
+}
+
+func (l League) Less(i, j int) bool {
+	return l[i].Wins > l[j].Wins
+}
+
+func (l League) Swap(i, j int) {
+	l[i], l[j] = l[j], l[i]
 }
