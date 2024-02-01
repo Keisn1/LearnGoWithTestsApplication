@@ -36,7 +36,7 @@ func TestGame(t *testing.T) {
 		playerStore := poker.StubPlayerStore{}
 		game := *poker.NewGame(dummyNbrOfPlayers, &playerStore, dummySpyAlerter)
 
-		game.PlayPoker("Chris")
+		game.RecordWinner("Chris")
 		poker.AssertPlayerWin(t, &playerStore, "Chris")
 	})
 
@@ -44,7 +44,7 @@ func TestGame(t *testing.T) {
 		playerStore := poker.StubPlayerStore{}
 		game := *poker.NewGame(dummyNbrOfPlayers, &playerStore, dummySpyAlerter)
 
-		game.PlayPoker("Cleo")
+		game.RecordWinner("Cleo")
 		poker.AssertPlayerWin(t, &playerStore, "Cleo")
 	})
 
@@ -52,7 +52,7 @@ func TestGame(t *testing.T) {
 		blindAlerter := &SpyBlindAlerter{}
 
 		game := poker.NewGame(dummyNbrOfPlayers, &dummyPlayerStore, blindAlerter)
-		game.PlayPoker("")
+		game.PlayPoker()
 
 		cases := []scheduledAlert{
 			{0 * time.Second, 100},
@@ -85,9 +85,9 @@ func TestGame(t *testing.T) {
 	t.Run("Check right alerts with different number of players", func(t *testing.T) {
 		nbrOfPlayers := 7
 		blindAlerter := &SpyBlindAlerter{}
-		cli := *poker.NewGame(nbrOfPlayers, &dummyPlayerStore, blindAlerter)
+		game := *poker.NewGame(nbrOfPlayers, &dummyPlayerStore, blindAlerter)
 
-		cli.PlayPoker("")
+		game.PlayPoker()
 		cases := []scheduledAlert{
 			{0 * time.Second, 100},
 			{12 * time.Minute, 200},

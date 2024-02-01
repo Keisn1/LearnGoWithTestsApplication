@@ -28,6 +28,8 @@ func main() {
 	cli.PromptForPlayers()
 	nbrOfPlayers, _ := cli.GetNbrOfPlayers()
 	game := poker.NewGame(nbrOfPlayers, store, alerter)
+	game.PlayPoker()
 	winner := cli.GetWinner()
-	game.PlayPoker(winner)
+	game.RecordWinner(winner)
+
 }

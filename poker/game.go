@@ -21,9 +21,12 @@ func (game *Game) scheduleBlindAlerts() {
 	}
 }
 
-func (game *Game) PlayPoker(winner string) {
-	game.scheduleBlindAlerts()
+func (game *Game) RecordWinner(winner string) {
 	game.playerStore.RecordWin(winner)
+}
+
+func (game *Game) PlayPoker() {
+	game.scheduleBlindAlerts()
 }
 
 func NewGame(nbrOfPlayers int, s PlayerStore, a BlindAlerter) *Game {
