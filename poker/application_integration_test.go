@@ -1,19 +1,20 @@
-package poker
+package poker_test
 
 import (
 	"fmt"
+	"github.com/Keisn1/LearnGoWithTestsApp/poker"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
 func TestRecordingWinsAndRetrievingThem(t *testing.T) {
-	database, cleanDatabase := createTempFile(t, `[]`)
+	database, cleanDatabase := poker.CreateTempFile(t, `[]`)
 	defer cleanDatabase()
-	store, err := NewFileSystemPlayerStore(database)
-	assertNoError(t, err)
+	store, err := poker.NewFileSystemPlayerStore(database)
+	poker.AssertNoError(t, err)
 
-	server := NewPlayerServer(store)
+	server := poker.NewPlayerServer(store)
 
 	player := "Pepper"
 
@@ -28,6 +29,6 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	request, _ = http.NewRequest(http.MethodGet, fmt.Sprintf("/players/%s", player), nil)
 	server.ServeHTTP(response, request)
 
-	assertStatusCode(t, response.Code, http.StatusOK)
-	assertResponseBody(t, response.Body.String(), "3")
+	poker.AssertStatusCode(t, response.Code, http.StatusOK)
+	poker.AssertResponseBody(t, response.Body.String(), "3")
 }

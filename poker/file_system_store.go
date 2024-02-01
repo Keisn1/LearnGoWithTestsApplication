@@ -30,7 +30,8 @@ func initialisePlayerDBFile(file *os.File) error {
 		err = fmt.Errorf("could get fileinfo, %v", err)
 		return err
 	}
-	if info.Size() == 0 {
+
+	if info.Size() < 2 {
 		file.Write([]byte("[]"))
 		file.Seek(0, io.SeekStart)
 	}
@@ -41,7 +42,7 @@ func NewFileSystemPlayerStore(file *os.File) (*FileSystemPlayerStore, error) {
 	err := initialisePlayerDBFile(file)
 
 	if err != nil {
-		return nil, fmt.Errorf("Problem initialising plaeyr db file, %v", err)
+		return nil, fmt.Errorf("Problem initialising player db file, %v", err)
 	}
 
 	league, err := NewLeague(file)

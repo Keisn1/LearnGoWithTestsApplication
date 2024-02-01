@@ -3,6 +3,7 @@ package poker
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -10,6 +11,7 @@ type League []Player
 
 func NewLeague(file *os.File) (League, error) {
 	var league League
+	file.Seek(0, io.SeekStart)
 	err := json.NewDecoder(file).Decode(&league)
 	if err != nil {
 		err = fmt.Errorf("problem parsing league, initialising with empty league: %v", err)

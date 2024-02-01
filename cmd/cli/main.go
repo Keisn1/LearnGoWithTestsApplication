@@ -1,15 +1,19 @@
 package main
 
 import (
-	"github.com/Keisn1/LearnGoWithTestsApp/poker"
+	"fmt"
 	"log"
-	"net/http"
 	"os"
+
+	"github.com/Keisn1/LearnGoWithTestsApp/poker"
 )
 
 const dbFileName = "game.db.json"
 
 func main() {
+	fmt.Println("Let's play poker")
+	fmt.Println("Type {Name} wins to record a win")
+
 	db, err := os.OpenFile(dbFileName, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		log.Fatalf("Unable to open database file %v with err: %v", dbFileName, err)
@@ -19,8 +23,7 @@ func main() {
 		log.Fatalf("problem creating file system player store, %v ", err)
 	}
 
-	svr := poker.NewPlayerServer(store)
-	if err := http.ListenAndServe(":5000", svr); err != nil {
-		log.Fatalf("Could not listen on port 5000 with err: %v", err)
-	}
+	alerter := poker.BlindAlerterFunc(poker.StdOutAlerter)
+	cli := poker.NewCLI(os.Stdin, store, alerter)
+	cli.PlayPoker()
 }
