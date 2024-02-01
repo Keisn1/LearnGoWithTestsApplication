@@ -8,19 +8,38 @@ import (
 	"strings"
 )
 
-const PlayerPrompt = "Please enter the number of players: "
+const (
+	Welcome      = "Let's play poker"
+	PlayerPrompt = "Please enter the number of players: "
+	UserInfo     = "Type {Name} wins to record a win"
+)
 
 type CLI struct {
 	in   *bufio.Scanner
 	out  io.Writer
-	game *Game
+	game Game
 }
 
-func NewCLI(in io.Reader, out io.Writer) CLI {
-	return CLI{
-		in:  bufio.NewScanner(in),
-		out: out,
+func NewCLI(in io.Reader, out io.Writer, game Game) *CLI {
+	return &CLI{
+		in:   bufio.NewScanner(in),
+		out:  out,
+		game: game,
 	}
+}
+
+func (cli *CLI) PlayPoker() {
+	fmt.Fprint(cli.out, Welcome, "\n")
+	fmt.Fprint(cli.out, PlayerPrompt, "\n")
+	nbrOfPlayers, _ := cli.GetNbrOfPlayers()
+
+	cli.game.Start(nbrOfPlayers)
+
+	fmt.Fprint(cli.out, UserInfo)
+
+	winner := cli.GetWinner()
+
+	cli.game.Finish(winner)
 }
 
 func (cli *CLI) GetNbrOfPlayers() (int, error) {

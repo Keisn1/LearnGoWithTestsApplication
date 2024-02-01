@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -11,9 +10,6 @@ import (
 const dbFileName = "game.db.json"
 
 func main() {
-	fmt.Println("Let's play poker")
-	fmt.Println("Type {Name} wins to record a win")
-
 	db, err := os.OpenFile(dbFileName, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		log.Fatalf("Unable to open database file %v with err: %v", dbFileName, err)
@@ -24,12 +20,7 @@ func main() {
 	}
 
 	alerter := poker.BlindAlerterFunc(poker.StdOutAlerter)
-	cli := poker.NewCLI(os.Stdin, os.Stdout)
-	cli.PromptForPlayers()
-	nbrOfPlayers, _ := cli.GetNbrOfPlayers()
-	game := poker.NewGame(nbrOfPlayers, store, alerter)
-	game.PlayPoker()
-	winner := cli.GetWinner()
-	game.RecordWinner(winner)
-
+	game := poker.NewGame(store, alerter)
+	cli := poker.NewCLI(os.Stdin, os.Stdout, game)
+	cli.PlayPoker()
 }

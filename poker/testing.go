@@ -8,25 +8,35 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 )
 
-// one internal test
-func TestTape_Write(t *testing.T) {
-	file, clean := CreateTempFile(t, "12345")
-	defer clean()
+type SpyBlindAlerter struct {
+	Alerts []ScheduledAlert
+}
 
-	tape := tape{file}
+type ScheduledAlert struct {
+	At     time.Duration
+	Amount int
+}
 
-	tape.Write([]byte("abc"))
+func (s ScheduledAlert) String() string {
+	return fmt.Sprintf("%d chips at %v", s.Amount, s.At)
+}
 
-	file.Seek(0, 0)
-	newFileContents, _ := io.ReadAll(file)
+func (s *SpyBlindAlerter) ScheduleAlertAt(duration time.Duration, amount int) {
+	s.Alerts = append(s.Alerts, ScheduledAlert{duration, amount})
+}
 
-	got := string(newFileContents)
-	want := "abc"
+func AssertScheduledAlert(t *testing.T, got, want ScheduledAlert) {
+	amountGot := got.Amount
+	if amountGot != want.Amount {
+		t.Errorf("got amount %d, want %d", amountGot, want.Amount)
+	}
 
-	if got != want {
-		t.Errorf("got %q want %q", got, want)
+	gotScheduledTime := got.At
+	if gotScheduledTime != want.At {
+		t.Errorf("got scheduled time of %v, want %v", gotScheduledTime, want.At)
 	}
 }
 
@@ -141,5 +151,25 @@ func AssertNoError(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
 		t.Fatalf("didn't expect an error but got one, %v", err)
+	}
+}
+
+// one internal test
+func TestTape_Write(t *testing.T) {
+	file, clean := CreateTempFile(t, "12345")
+	defer clean()
+
+	tape := tape{file}
+
+	tape.Write([]byte("abc"))
+
+	file.Seek(0, 0)
+	newFileContents, _ := io.ReadAll(file)
+
+	got := string(newFileContents)
+	want := "abc"
+
+	if got != want {
+		t.Errorf("got %q want %q", got, want)
 	}
 }
