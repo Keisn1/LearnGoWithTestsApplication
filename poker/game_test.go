@@ -1,9 +1,7 @@
 package poker_test
 
 import (
-	"bytes"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -30,34 +28,31 @@ func (s *SpyBlindAlerter) ScheduleAlertAt(duration time.Duration, amount int) {
 func TestGame(t *testing.T) {
 	var (
 		dummyNbrOfPlayers = 5
-		dummyStdIn        = bytes.Buffer{}
 		dummyPlayerStore  = poker.StubPlayerStore{}
 		dummySpyAlerter   = &SpyBlindAlerter{}
 	)
 
 	t.Run("record chris win from user input", func(t *testing.T) {
-		in := strings.NewReader("Chris wins\n")
 		playerStore := poker.StubPlayerStore{}
-		game := *poker.NewGame(dummyNbrOfPlayers, in, &playerStore, dummySpyAlerter)
+		game := *poker.NewGame(dummyNbrOfPlayers, &playerStore, dummySpyAlerter)
 
-		game.PlayPoker()
+		game.PlayPoker("Chris")
 		poker.AssertPlayerWin(t, &playerStore, "Chris")
 	})
 
 	t.Run("record Cleo win from user input", func(t *testing.T) {
-		in := strings.NewReader("Cleo wins\n")
 		playerStore := poker.StubPlayerStore{}
-		game := *poker.NewGame(dummyNbrOfPlayers, in, &playerStore, dummySpyAlerter)
+		game := *poker.NewGame(dummyNbrOfPlayers, &playerStore, dummySpyAlerter)
 
-		game.PlayPoker()
+		game.PlayPoker("Cleo")
 		poker.AssertPlayerWin(t, &playerStore, "Cleo")
 	})
 
 	t.Run("it schedules printing of blind values", func(t *testing.T) {
 		blindAlerter := &SpyBlindAlerter{}
 
-		game := poker.NewGame(dummyNbrOfPlayers, &dummyStdIn, &dummyPlayerStore, blindAlerter)
-		game.PlayPoker()
+		game := poker.NewGame(dummyNbrOfPlayers, &dummyPlayerStore, blindAlerter)
+		game.PlayPoker("")
 
 		cases := []scheduledAlert{
 			{0 * time.Second, 100},
@@ -90,9 +85,9 @@ func TestGame(t *testing.T) {
 	t.Run("Check right alerts with different number of players", func(t *testing.T) {
 		nbrOfPlayers := 7
 		blindAlerter := &SpyBlindAlerter{}
-		cli := *poker.NewGame(nbrOfPlayers, &dummyStdIn, &dummyPlayerStore, blindAlerter)
+		cli := *poker.NewGame(nbrOfPlayers, &dummyPlayerStore, blindAlerter)
 
-		cli.PlayPoker()
+		cli.PlayPoker("")
 		cases := []scheduledAlert{
 			{0 * time.Second, 100},
 			{12 * time.Minute, 200},

@@ -24,6 +24,10 @@ func main() {
 	}
 
 	alerter := poker.BlindAlerterFunc(poker.StdOutAlerter)
-	cli := poker.NewCLI(os.Stdin, store, alerter)
-	cli.PlayPoker()
+	cli := poker.NewCLI(os.Stdin, os.Stdout)
+	cli.PromptForPlayers()
+	nbrOfPlayers, _ := cli.GetNbrOfPlayers()
+	game := poker.NewGame(nbrOfPlayers, store, alerter)
+	winner := cli.GetWinner()
+	game.PlayPoker(winner)
 }

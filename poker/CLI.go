@@ -5,25 +5,15 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 )
 
 const PlayerPrompt = "Please enter the number of players: "
 
 type CLI struct {
-	in  *bufio.Scanner
-	out io.Writer
-}
-
-func (g *CLI) getNbrOfPlayers() (int, error) {
-	nbrOfPlayers, err := strconv.Atoi(g.readLine())
-	if err != nil {
-		return -1, fmt.Errorf("Could not convert Userinput to int for nbrOfPlayers, %v", err)
-	}
-	return nbrOfPlayers, err
-}
-
-func (g *CLI) StartGame() {
-	g.promptForPlayers()
+	in   *bufio.Scanner
+	out  io.Writer
+	game *Game
 }
 
 func NewCLI(in io.Reader, out io.Writer) CLI {
@@ -33,11 +23,27 @@ func NewCLI(in io.Reader, out io.Writer) CLI {
 	}
 }
 
-func (g *CLI) promptForPlayers() {
-	fmt.Fprint(g.out, PlayerPrompt)
+func (cli *CLI) GetNbrOfPlayers() (int, error) {
+	nbrOfPlayers, err := strconv.Atoi(cli.readLine())
+	if err != nil {
+		return -1, fmt.Errorf("Could not convert Userinput to int for nbrOfPlayers, %v", err)
+	}
+	return nbrOfPlayers, err
 }
 
-func (g *CLI) readLine() string {
-	g.in.Scan()
-	return g.in.Text()
+func (cli *CLI) PromptForPlayers() {
+	fmt.Fprint(cli.out, PlayerPrompt)
+}
+
+func (cli *CLI) GetWinner() string {
+	return extractWinner(cli.readLine())
+}
+
+func (cli *CLI) readLine() string {
+	cli.in.Scan()
+	return cli.in.Text()
+}
+
+func extractWinner(userInput string) string {
+	return strings.Replace(userInput, " wins", "", 1)
 }

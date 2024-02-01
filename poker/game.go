@@ -1,15 +1,11 @@
 package poker
 
 import (
-	"bufio"
-	"io"
-	"strings"
 	"time"
 )
 
 type Game struct {
 	nbrOfPlayers int
-	in           *bufio.Scanner
 	playerStore  PlayerStore
 	alerter      BlindAlerter
 }
@@ -25,26 +21,15 @@ func (game *Game) scheduleBlindAlerts() {
 	}
 }
 
-func (game *Game) PlayPoker() {
+func (game *Game) PlayPoker(winner string) {
 	game.scheduleBlindAlerts()
-	userInput := game.readLine()
-	game.playerStore.RecordWin(extractWinner(userInput))
+	game.playerStore.RecordWin(winner)
 }
 
-func (game *Game) readLine() string {
-	game.in.Scan()
-	return game.in.Text()
-}
-
-func NewGame(nbrOfPlayers int, in io.Reader, s PlayerStore, a BlindAlerter) *Game {
+func NewGame(nbrOfPlayers int, s PlayerStore, a BlindAlerter) *Game {
 	return &Game{
+		nbrOfPlayers: nbrOfPlayers,
 		playerStore:  s,
 		alerter:      a,
-		in:           bufio.NewScanner(in),
-		nbrOfPlayers: nbrOfPlayers,
 	}
-}
-
-func extractWinner(userInput string) string {
-	return strings.Replace(userInput, " wins", "", 1)
 }
