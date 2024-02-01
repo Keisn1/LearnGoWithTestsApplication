@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -17,18 +19,35 @@ type CLI struct {
 	alerter     BlindAlerter
 }
 
-func (cli *CLI) scheduleBlindAlerts() {
+func (cli *CLI) scheduleBlindAlerts(nbrOfPlayers int) {
+	blindIncrement := time.Duration(5+nbrOfPlayers) * time.Minute
+
 	blinds := []int{100, 200, 300, 400, 500, 600, 800, 1000, 2000, 4000, 8000}
 	blindTime := 0 * time.Minute
 	for _, blind := range blinds {
 		cli.alerter.ScheduleAlertAt(blindTime, blind)
-		blindTime += 10 * time.Minute
+		blindTime += blindIncrement
 	}
+}
+
+func (cli *CLI) getNbrOfPlayers() (int, error) {
+	nbrOfPlayers, err := strconv.Atoi(cli.readLine())
+	if err != nil {
+		return -1, fmt.Errorf("Could not convert Userinput to int for nbrOfPlayers, %v", err)
+	}
+	return nbrOfPlayers, err
 }
 
 func (cli *CLI) PlayPoker() {
 	cli.promptForPlayers()
-	cli.scheduleBlindAlerts()
+	nbrOfPlayers, err := cli.getNbrOfPlayers()
+	if err != nil {
+		fmt.Print(err)
+		os.Exit(1)
+	}
+
+	cli.scheduleBlindAlerts(nbrOfPlayers)
+
 	userInput := cli.readLine()
 	cli.playerStore.RecordWin(extractWinner(userInput))
 }

@@ -41,7 +41,7 @@ func TestCLI(t *testing.T) {
 		stdout := bytes.Buffer{}
 		in := strings.NewReader("7\n")
 		blindAlerter := &SpyBlindAlerter{}
-		cli := *poker.NewCLI(in, &stdout, &dummyPlayerStore, dummySpyAlerter)
+		cli := *poker.NewCLI(in, &stdout, &dummyPlayerStore, blindAlerter)
 
 		cli.PlayPoker()
 
@@ -72,7 +72,7 @@ func TestCLI(t *testing.T) {
 	})
 
 	t.Run("record chris win from user input", func(t *testing.T) {
-		in := strings.NewReader("Chris wins\n")
+		in := strings.NewReader("1\nChris wins\n")
 		playerStore := poker.StubPlayerStore{}
 		cli := *poker.NewCLI(in, &dummyStdout, &playerStore, dummySpyAlerter)
 
@@ -81,7 +81,7 @@ func TestCLI(t *testing.T) {
 	})
 
 	t.Run("record Cleo win from user input", func(t *testing.T) {
-		in := strings.NewReader("Cleo wins\n")
+		in := strings.NewReader("1\nCleo wins\n")
 		playerStore := poker.StubPlayerStore{}
 
 		cli := *poker.NewCLI(in, &dummyStdout, &playerStore, dummySpyAlerter)
@@ -91,7 +91,7 @@ func TestCLI(t *testing.T) {
 	})
 
 	t.Run("it schedules printing of blind values", func(t *testing.T) {
-		in := strings.NewReader("Chris wins\n")
+		in := strings.NewReader("5\nChris wins\n")
 		playerStore := poker.StubPlayerStore{}
 		blindAlerter := &SpyBlindAlerter{}
 
