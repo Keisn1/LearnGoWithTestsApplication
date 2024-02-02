@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
+
+	"io"
 
 	"github.com/Keisn1/LearnGoWithTestsApp/poker"
-	"io"
 )
 
 type SpyGame struct {
@@ -43,8 +45,8 @@ func TestCLI(t *testing.T) {
 		AssertMessageSentToUser(t, out, wantMessages...)
 
 		// checking calls to Start and Finish
-		assertStartCalledWith(t, spyGame, 8)
-		assertFinishCalledWith(t, spyGame, "Cleo")
+		assertStartCalledWith(t, &spyGame, 8)
+		assertFinishCalledWith(t, &spyGame, "Cleo")
 	})
 
 	t.Run("PlayPoker", func(t *testing.T) {
@@ -57,8 +59,8 @@ func TestCLI(t *testing.T) {
 		cli.PlayPoker()
 
 		AssertMessageSentToUser(t, out, poker.Welcome, poker.PlayerPrompt, poker.UserInfo)
-		assertStartCalledWith(t, spyGame, 7)
-		assertFinishCalledWith(t, spyGame, "Chris")
+		assertStartCalledWith(t, &spyGame, 7)
+		assertFinishCalledWith(t, &spyGame, "Chris")
 	})
 
 	t.Run("it prints an error when a non numeric value is entered and does not start the game", func(t *testing.T) {
@@ -95,20 +97,38 @@ func AssertMessageSentToUser(t *testing.T, out *bytes.Buffer, messages ...string
 	}
 }
 
-func assertStartCalledWith(t *testing.T, s SpyGame, want int) {
+func assertStartCalledWith(t *testing.T, game *SpyGame, want int) {
 	t.Helper()
-	got := s.StartCalledWith
-	if got != want {
-		t.Errorf(`got = %v; want %v`, got, want)
+
+	passed := retryUntil(500*time.Millisecond, func() bool {
+		return game.StartCalledWith == want
+	})
+
+	if !passed {
+		t.Errorf("expected start called with %d but got %d", want, game.StartCalledWith)
 	}
 }
 
-func assertFinishCalledWith(t *testing.T, s SpyGame, want string) {
+func assertFinishCalledWith(t *testing.T, game *SpyGame, winner string) {
 	t.Helper()
-	got := s.FinishCalledWith
-	if got != want {
-		t.Errorf(`got = %v; want %v`, got, want)
+
+	passed := retryUntil(500*time.Millisecond, func() bool {
+		return game.FinishCalledWith == winner
+	})
+
+	if !passed {
+		t.Errorf("expected finish called with %q but got %q", winner, game.FinishCalledWith)
 	}
+}
+
+func retryUntil(d time.Duration, f func() bool) bool {
+	deadline := time.Now().Add(d)
+	for time.Now().Before(deadline) {
+		if f() {
+			return true
+		}
+	}
+	return false
 }
 
 func assertGameNotStarted(t *testing.T, g SpyGame) {

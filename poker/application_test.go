@@ -144,22 +144,6 @@ func TestGame(t *testing.T) {
 		poker.AssertStatus(t, response, http.StatusOK)
 	})
 
-	t.Run("when we get a message over a websocket it is a winner of a game", func(t *testing.T) {
-		store := &poker.StubPlayerStore{}
-		winner := "Ruth"
-		svr := httptest.NewServer(MustMakePlayerServer(t, store, dummyGame))
-		defer svr.Close()
-
-		ws := poker.MustDialWS(t, "ws"+strings.TrimPrefix(svr.URL, "http")+"/ws")
-		defer ws.Close()
-
-		poker.WriteWSMessage(t, ws, "3")
-		poker.WriteWSMessage(t, ws, winner)
-
-		time.Sleep(100 * time.Millisecond)
-		poker.AssertPlayerWin(t, store, winner)
-	})
-
 	t.Run("start game with 3 players and finish fame with 'Crhis' as winner", func(t *testing.T) {
 		wantedBlindAlert := "Blind is 100"
 		winner := "Ruth"
@@ -174,11 +158,9 @@ func TestGame(t *testing.T) {
 		poker.WriteWSMessage(t, ws, "3")
 		poker.WriteWSMessage(t, ws, winner)
 
-		time.Sleep(100 * time.Millisecond)
-		assertStartCalledWith(t, spyGame, 3)
-		assertFinishCalledWith(t, spyGame, "Ruth")
-
-		within(t, time.Second, func() { assertWebSocketGotMsg(t, ws, wantedBlindAlert) })
+		assertStartCalledWith(t, &spyGame, 3)
+		assertFinishCalledWith(t, &spyGame, winner)
+		within(t, 10*time.Millisecond, func() { assertWebSocketGotMsg(t, ws, wantedBlindAlert) })
 	})
 }
 
