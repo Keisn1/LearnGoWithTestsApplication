@@ -19,7 +19,13 @@ func main() {
 		log.Fatalf("problem creating file system player store, %v ", err)
 	}
 
-	svr := poker.NewPlayerServer(store)
+	alerter := poker.BlindAlerterFunc(poker.Alerter)
+	game := poker.NewGame(store, alerter)
+
+	svr, err := poker.NewPlayerServer(store, game)
+	if err != nil {
+		panic(err)
+	}
 	if err := http.ListenAndServe(":5000", svr); err != nil {
 		log.Fatalf("Could not listen on port 5000 with err: %v", err)
 	}

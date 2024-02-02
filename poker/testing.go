@@ -3,8 +3,10 @@ package poker
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"reflect"
 	"testing"
@@ -24,7 +26,7 @@ func (s ScheduledAlert) String() string {
 	return fmt.Sprintf("%d chips at %v", s.Amount, s.At)
 }
 
-func (s *SpyBlindAlerter) ScheduleAlertAt(duration time.Duration, amount int) {
+func (s *SpyBlindAlerter) ScheduleAlertAt(duration time.Duration, amount int, to io.Writer) {
 	s.Alerts = append(s.Alerts, ScheduledAlert{duration, amount})
 }
 
@@ -54,7 +56,9 @@ func (s *StubPlayerStore) GetLeagueTable() League {
 }
 
 func (s *StubPlayerStore) RecordWin(name string) {
+
 	s.winCalls = append(s.winCalls, name)
+	fmt.Println(s.winCalls)
 }
 
 func (s *StubPlayerStore) GetPlayerScore(name string) (int, StoreError) {
@@ -98,11 +102,10 @@ func AssertPlayerWin(t *testing.T, store *StubPlayerStore, winner string) {
 	}
 }
 
-func AssertStatusCode(t *testing.T, got, want int) {
+func AssertStatus(t *testing.T, r *httptest.ResponseRecorder, want int) {
 	t.Helper()
-
-	if got != want {
-		t.Errorf("got = \"%v\"; want \"%v\"", got, want)
+	if r.Code != want {
+		t.Errorf("got = \"%v\"; want \"%v\"", r.Code, want)
 	}
 }
 
@@ -171,5 +174,25 @@ func TestTape_Write(t *testing.T) {
 
 	if got != want {
 		t.Errorf("got %q want %q", got, want)
+	}
+}
+
+func NewGameRequest() *http.Request {
+	r, _ := http.NewRequest(http.MethodGet, "/game", nil)
+	return r
+}
+
+func MustDialWS(t *testing.T, url string) *websocket.Conn {
+	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
+	if err != nil {
+		t.Fatalf("Could not open a ws connection on %s %v", url, err)
+	}
+	return ws
+
+}
+func WriteWSMessage(t testing.TB, conn *websocket.Conn, message string) {
+	t.Helper()
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+		t.Fatalf("could not send message over ws connection %v", err)
 	}
 }

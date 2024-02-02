@@ -19,7 +19,7 @@ func main() {
 		log.Fatalf("problem creating file system player store, %v ", err)
 	}
 
-	alerter := poker.BlindAlerterFunc(poker.StdOutAlerter)
+	alerter := poker.BlindAlerterFunc(poker.Alerter)
 	game := poker.NewGame(store, alerter)
 	cli := poker.NewCLI(os.Stdin, os.Stdout, game)
 	cli.PlayPoker()

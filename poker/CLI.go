@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	Welcome      = "Let's play poker"
-	PlayerPrompt = "Please enter the number of players: "
-	UserInfo     = "Type {Name} wins to record a win"
+	Welcome              = "Let's play poker"
+	PlayerPrompt         = "Please enter the number of players: "
+	UserInfo             = "Type {Name} wins to record a win"
+	BadPlayerInputErrMsg = "You're so silly"
 )
 
 type CLI struct {
@@ -31,9 +32,12 @@ func NewCLI(in io.Reader, out io.Writer, game Game) *CLI {
 func (cli *CLI) PlayPoker() {
 	fmt.Fprint(cli.out, Welcome, "\n")
 	fmt.Fprint(cli.out, PlayerPrompt, "\n")
-	nbrOfPlayers, _ := cli.GetNbrOfPlayers()
-
-	cli.game.Start(nbrOfPlayers)
+	nbrOfPlayers, err := cli.GetNbrOfPlayers()
+	if err != nil {
+		fmt.Fprint(cli.out, "You're so silly")
+		return
+	}
+	cli.game.Start(nbrOfPlayers, io.Discard)
 
 	fmt.Fprint(cli.out, UserInfo)
 

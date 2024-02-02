@@ -14,7 +14,8 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	store, err := poker.NewFileSystemPlayerStore(database)
 	poker.AssertNoError(t, err)
 
-	server := poker.NewPlayerServer(store)
+	server, err := poker.NewPlayerServer(store, nil)
+	poker.AssertNoError(t, err)
 
 	player := "Pepper"
 
@@ -29,6 +30,6 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	request, _ = http.NewRequest(http.MethodGet, fmt.Sprintf("/players/%s", player), nil)
 	server.ServeHTTP(response, request)
 
-	poker.AssertStatusCode(t, response.Code, http.StatusOK)
+	poker.AssertStatus(t, response, http.StatusOK)
 	poker.AssertResponseBody(t, response.Body.String(), "3")
 }

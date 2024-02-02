@@ -3,9 +3,15 @@ package poker
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
+
+	"github.com/gorilla/websocket"
+	"log"
 )
 
 const (
@@ -26,20 +32,71 @@ type PlayerStore interface {
 	RecordWin(name string)
 }
 
-type PlayerServer struct {
-	Store PlayerStore
-	http.Handler
+type playerServerWS struct {
+	*websocket.Conn
 }
 
-func NewPlayerServer(store PlayerStore) *PlayerServer {
-	svr := &PlayerServer{
-		Store: store,
+func newPlayerServerWS(w http.ResponseWriter, r *http.Request) *playerServerWS {
+	conn, err := wsUpgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("problem upgrading connection to WebSockets %v\n", err)
 	}
+
+	return &playerServerWS{conn}
+}
+
+func (w *playerServerWS) WaitForMsg() string {
+	_, msg, err := w.ReadMessage()
+	if err != nil {
+		log.Printf("error reading from websocket %v\n", err)
+	}
+	return string(msg)
+}
+
+type PlayerServer struct {
+	store PlayerStore
+	http.Handler
+	game     Game
+	template *template.Template
+}
+
+const htmlTemplatePath = "game.html"
+
+func NewPlayerServer(store PlayerStore, game Game) (*PlayerServer, error) {
+
+	svr := new(PlayerServer)
+	tmpl, err := template.ParseFiles(htmlTemplatePath)
+	if err != nil {
+		return nil, fmt.Errorf("problem loading template %s %v", htmlTemplatePath, err)
+	}
+	svr.template = tmpl
+	svr.store = store
+	svr.game = game
+
 	router := http.NewServeMux()
 	router.Handle("/league", http.HandlerFunc(svr.getLeague))
+	router.Handle("/game", http.HandlerFunc(svr.gameHandler))
+	router.Handle("/ws", http.HandlerFunc(svr.webSocket))
 	router.Handle("/players/", http.HandlerFunc(svr.playersHandler))
 	svr.Handler = router
-	return svr
+	return svr, nil
+}
+
+var wsUpgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+func (svr *PlayerServer) webSocket(w http.ResponseWriter, r *http.Request) {
+	ws := newPlayerServerWS(w, r)
+	nbrOfPlayersMsg := ws.WaitForMsg()
+	nbrOfPlayers, _ := strconv.Atoi(string(nbrOfPlayersMsg))
+	svr.game.Start(nbrOfPlayers, io.Discard)
+
+	winnerMsg := ws.WaitForMsg()
+	svr.game.Finish(string(winnerMsg))
+
+	svr.store.RecordWin(string(winnerMsg))
 }
 
 func (svr *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
@@ -48,13 +105,21 @@ func (svr *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *PlayerServer) getLeague(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
-	err := json.NewEncoder(w).Encode(s.Store.GetLeagueTable())
+	err := json.NewEncoder(w).Encode(s.store.GetLeagueTable())
 	if err != nil {
 		slog.Error("Wasn't able to Marshal players into json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error occurred while encoding JSON"))
 		return
 	}
+}
+
+func (svr *PlayerServer) gameHandler(w http.ResponseWriter, r *http.Request) {
+	svr.getGame(w, r)
+}
+
+func (p *PlayerServer) getGame(w http.ResponseWriter, r *http.Request) {
+	p.template.Execute(w, nil)
 }
 
 func (svr *PlayerServer) playersHandler(w http.ResponseWriter, r *http.Request) {
@@ -68,12 +133,12 @@ func (svr *PlayerServer) playersHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (svr *PlayerServer) processWin(w http.ResponseWriter, player string) {
-	svr.Store.RecordWin(player)
+	svr.store.RecordWin(player)
 	w.WriteHeader(http.StatusAccepted)
 }
 
 func (svr *PlayerServer) showScore(w http.ResponseWriter, player string) {
-	score, err := svr.Store.GetPlayerScore(player)
+	score, err := svr.store.GetPlayerScore(player)
 
 	if err == PlayerNotFoundError {
 		w.WriteHeader(http.StatusNotFound)

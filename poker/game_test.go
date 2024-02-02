@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/Keisn1/LearnGoWithTestsApp/poker"
+	"io"
 )
 
 var (
-	dummyPlayerStore = poker.StubPlayerStore{}
+	dummyPlayerStore = &poker.StubPlayerStore{}
 	dummySpyAlerter  = &poker.SpyBlindAlerter{}
 )
 
@@ -17,8 +18,8 @@ func TestGame_Start(t *testing.T) {
 	t.Run("schedules alerts on game start for 5 players", func(t *testing.T) {
 		blindAlerter := &poker.SpyBlindAlerter{}
 
-		game := poker.NewGame(&dummyPlayerStore, blindAlerter)
-		game.Start(5)
+		game := poker.NewGame(dummyPlayerStore, blindAlerter)
+		game.Start(5, io.Discard)
 
 		cases := []poker.ScheduledAlert{
 			{0 * time.Second, 100},
@@ -38,9 +39,9 @@ func TestGame_Start(t *testing.T) {
 
 	t.Run("schedules alerts on game start for 7 players", func(t *testing.T) {
 		blindAlerter := &poker.SpyBlindAlerter{}
-		game := *poker.NewGame(&dummyPlayerStore, blindAlerter)
+		game := *poker.NewGame(dummyPlayerStore, blindAlerter)
 
-		game.Start(7)
+		game.Start(7, io.Discard)
 		cases := []poker.ScheduledAlert{
 			{0 * time.Second, 100},
 			{12 * time.Minute, 200},
