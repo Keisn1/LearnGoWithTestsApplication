@@ -58,7 +58,6 @@ func (s *StubPlayerStore) GetLeagueTable() League {
 func (s *StubPlayerStore) RecordWin(name string) {
 
 	s.winCalls = append(s.winCalls, name)
-	fmt.Println(s.winCalls)
 }
 
 func (s *StubPlayerStore) GetPlayerScore(name string) (int, StoreError) {

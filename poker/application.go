@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/gorilla/websocket"
 	"log"
+
+	"github.com/gorilla/websocket"
 )
 
 const (
@@ -34,6 +34,14 @@ type PlayerStore interface {
 
 type playerServerWS struct {
 	*websocket.Conn
+}
+
+func (ws *playerServerWS) Write(p []byte) (n int, err error) {
+	err = ws.Conn.WriteMessage(websocket.TextMessage, p)
+	if err != nil {
+		return 0, err
+	}
+	return len(p), err
 }
 
 func newPlayerServerWS(w http.ResponseWriter, r *http.Request) *playerServerWS {
@@ -91,7 +99,7 @@ func (svr *PlayerServer) webSocket(w http.ResponseWriter, r *http.Request) {
 	ws := newPlayerServerWS(w, r)
 	nbrOfPlayersMsg := ws.WaitForMsg()
 	nbrOfPlayers, _ := strconv.Atoi(string(nbrOfPlayersMsg))
-	svr.game.Start(nbrOfPlayers, io.Discard)
+	svr.game.Start(nbrOfPlayers, ws)
 
 	winnerMsg := ws.WaitForMsg()
 	svr.game.Finish(string(winnerMsg))

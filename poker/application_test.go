@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Keisn1/LearnGoWithTestsApp/poker"
+	"github.com/gorilla/websocket"
 )
 
 var (
@@ -160,8 +161,10 @@ func TestGame(t *testing.T) {
 	})
 
 	t.Run("start game with 3 players and finish fame with 'Crhis' as winner", func(t *testing.T) {
-		spyGame := SpyGame{}
+		wantedBlindAlert := "Blind is 100"
 		winner := "Ruth"
+
+		spyGame := SpyGame{BlindAlert: []byte(wantedBlindAlert)}
 		svr := httptest.NewServer(MustMakePlayerServer(t, dummyPlayerStore, &spyGame))
 		ws := poker.MustDialWS(t, "ws"+strings.TrimPrefix(svr.URL, "http")+"/ws")
 
@@ -175,6 +178,7 @@ func TestGame(t *testing.T) {
 		assertStartCalledWith(t, spyGame, 3)
 		assertFinishCalledWith(t, spyGame, "Ruth")
 
+		within(t, time.Second, func() { assertWebSocketGotMsg(t, ws, wantedBlindAlert) })
 	})
 }
 
@@ -184,4 +188,28 @@ func MustMakePlayerServer(t *testing.T, store poker.PlayerStore, game poker.Game
 		t.Fatal("problem creating player server", err)
 	}
 	return server
+}
+
+func assertWebSocketGotMsg(t *testing.T, ws *websocket.Conn, want string) {
+	_, msg, _ := ws.ReadMessage()
+	if string(msg) != want {
+		t.Errorf(`got "%s", want "%s"`, string(msg), want)
+	}
+}
+
+func within(t testing.TB, d time.Duration, assert func()) {
+	t.Helper()
+
+	done := make(chan struct{}, 1)
+	go func() {
+		assert()
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-time.After(d):
+		t.Error("timed out")
+	case <-done:
+	}
+
 }

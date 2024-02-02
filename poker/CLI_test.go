@@ -10,18 +10,22 @@ import (
 )
 
 type SpyGame struct {
-	StartCalled  bool
-	StartedWith  int
-	FinishedWith string
+	StartCalled     bool
+	StartCalledWith int
+	BlindAlert      []byte
+
+	FinishCalled     bool
+	FinishCalledWith string
 }
 
-func (g *SpyGame) Start(nbrOfPlayers int, to io.Writer) {
-	g.StartedWith = nbrOfPlayers
+func (g *SpyGame) Start(nbrOfPlayers int, out io.Writer) {
 	g.StartCalled = true
+	g.StartCalledWith = nbrOfPlayers
+	out.Write(g.BlindAlert)
 }
 
 func (g *SpyGame) Finish(winner string) {
-	g.FinishedWith = winner
+	g.FinishCalledWith = winner
 }
 
 func TestCLI(t *testing.T) {
@@ -93,7 +97,7 @@ func AssertMessageSentToUser(t *testing.T, out *bytes.Buffer, messages ...string
 
 func assertStartCalledWith(t *testing.T, s SpyGame, want int) {
 	t.Helper()
-	got := s.StartedWith
+	got := s.StartCalledWith
 	if got != want {
 		t.Errorf(`got = %v; want %v`, got, want)
 	}
@@ -101,7 +105,7 @@ func assertStartCalledWith(t *testing.T, s SpyGame, want int) {
 
 func assertFinishCalledWith(t *testing.T, s SpyGame, want string) {
 	t.Helper()
-	got := s.FinishedWith
+	got := s.FinishCalledWith
 	if got != want {
 		t.Errorf(`got = %v; want %v`, got, want)
 	}
